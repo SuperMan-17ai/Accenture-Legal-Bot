@@ -1,7 +1,8 @@
 streamlit
-qdrant-client
+qdrant-client>=1.7.0
 langchain-groq
 langchain-community
 fastembed
 pypdf
 python-dotenv
+pydantic>=2.5.0
