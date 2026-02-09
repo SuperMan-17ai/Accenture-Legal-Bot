@@ -11,34 +11,36 @@ def build_vector_db():
     db_path = "./qdrant_db"
     collection_name = "accenture_10k"
 
-    # 1. Download PDF
+    # FIX: Delete the file if it's tiny/broken so we can re-download
+    if os.path.exists(pdf_path) and os.path.getsize(pdf_path) < 1000:
+        os.remove(pdf_path)
+
+    # 1. Download PDF with headers (to avoid being blocked)
     if not os.path.exists(pdf_path):
         print("⬇️ Downloading PDF...")
-        response = requests.get(pdf_url)
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(pdf_url, headers=headers)
         with open(pdf_path, "wb") as f:
             f.write(response.content)
 
     # 2. Load and Split
     print("📄 Processing PDF...")
-    loader = PyPDFLoader(pdf_path)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=50)
-    docs = loader.load_and_split(text_splitter)
+    try:
+        loader = PyPDFLoader(pdf_path)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=50)
+        docs = loader.load_and_split(text_splitter)
+    except Exception as e:
+        print(f"❌ PDF Error: {e}")
+        if os.path.exists(pdf_path): os.remove(pdf_path) # Clean up broken file
+        return
 
-    # 3. Initialize Embeddings
-    print("🧠 Initializing FastEmbed...")
+    # 3. Initialize Embeddings & Database
+    print("🧠 Initializing Database...")
     model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
-    
-    # 4. Create Qdrant Collection
     client = QdrantClient(path=db_path)
     
     texts = [doc.page_content for doc in docs]
-    
-    # FastEmbed 'add' method handles embedding and storage in one go
-    client.add(
-        collection_name=collection_name,
-        documents=texts,
-        metadata=[{"source": "Accenture 10-K FY23"} for _ in texts],
-    )
+    client.add(collection_name=collection_name, documents=texts)
     
     print("✅ Database built successfully!")
     client.close()
