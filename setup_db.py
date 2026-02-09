@@ -16,7 +16,8 @@ def build_vector_db():
     print("📄 Processing PDF...")
     loader = PyPDFLoader(pdf_path)
     # INCREASED OVERLAP: Helps preserve context across chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=150)
+    # INCREASED CHUNK SIZE: Better for tables
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=200)
     docs = loader.load_and_split(text_splitter)
     texts = [doc.page_content for doc in docs]
 
