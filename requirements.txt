@@ -1,5 +1,5 @@
-streamlit>=1.32.0
-qdrant-client>=1.7.0
+streamlit
+qdrant-client
 langchain-groq
 langchain-community
 fastembed
