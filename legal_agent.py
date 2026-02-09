@@ -14,30 +14,27 @@ groq_client = Groq(api_key=GROQ_API_KEY)
 
 def get_answer(query):
     try:
-        # Connect to DB
         client = QdrantClient(path=DB_PATH)
         
-        # High-level query: automatically handles vectorizing the 'query_text'
+        # INCREASED LIMIT: From 3 to 5 to capture more context
         search_result = client.query(
             collection_name=COLLECTION_NAME,
             query_text=query,
-            limit=3 
+            limit=5 
         )
         client.close()
         
-        # Extract documents from hits
         source_chunks = [hit.document for hit in search_result]
-        context_text = "\n\n".join(source_chunks)[:2000]
+        context_text = "\n\n".join(source_chunks)[:3000] # Increased context window
 
-        # Call Groq
         prompt = f"""
-        You are a legal expert. Use the following context from Accenture's 10-K to answer the question.
-        If the answer isn't in the context, say you don't know.
+        You are a Legal AI Expert. Answer the question strictly using the context below.
+        If the information is missing, say it's not in the document.
         
         CONTEXT:
         {context_text}
         
-        QUESTION: 
+        QUESTION:
         {query}
         """
         
