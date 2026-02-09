@@ -1,5 +1,6 @@
 streamlit
-qdrant-client>=1.7.0
+langchain  # <--- Add this line
+qdrant-client
 langchain-groq
 langchain-community
 fastembed
