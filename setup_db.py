@@ -9,28 +9,27 @@ def build_vector_db():
     db_path = "./qdrant_db"
     collection_name = "accenture_10k"
 
-    # 1. Check if file exists (it should now, since we uploaded it)
     if not os.path.exists(pdf_path):
-        print(f"❌ Error: {pdf_path} not found in the repository!")
+        print(f"❌ Error: {pdf_path} not found!")
         return
 
-    # 2. Load and Split
-    print("📄 Processing Local PDF...")
-    try:
-        loader = PyPDFLoader(pdf_path)
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=50)
-        docs = loader.load_and_split(text_splitter)
-    except Exception as e:
-        print(f"❌ PDF Reading Error: {e}")
-        return
+    # 1. Load and Split
+    print("📄 Processing PDF...")
+    loader = PyPDFLoader(pdf_path)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=50)
+    docs = loader.load_and_split(text_splitter)
+    texts = [doc.page_content for doc in docs]
 
-    # 3. Initialize Embeddings & Database
-    print("🧠 Initializing Database...")
-    model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+    # 2. Initialize and Upload
+    # client.add() handles the embedding model internally
     client = QdrantClient(path=db_path)
     
-    texts = [doc.page_content for doc in docs]
-    client.add(collection_name=collection_name, documents=texts)
+    print("🧠 Creating Vectors and Saving to Disk...")
+    client.add(
+        collection_name=collection_name,
+        documents=texts,
+        metadata=[{"source": "Accenture 10-K FY23"} for _ in texts]
+    )
     
     print("✅ Database built successfully!")
     client.close()
